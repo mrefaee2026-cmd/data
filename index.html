@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>منظومة دراسة طلبات تغطية المجاري المائية - وزارة الموارد المائية والري</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #f1f5f9;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background-color: #fff; }
+      .print-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+  <!-- الشريط العلوي -->
+  <header class="bg-gradient-to-l from-sky-900 via-blue-900 to-slate-900 text-white shadow-lg no-print">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-2xl">
+          🌊
+        </div>
+        <div>
+          <p class="text-xs text-sky-300 font-semibold">جمهورية مصر العربية • وزارة الموارد المائية والري</p>
+          <h1 class="text-lg md:text-xl font-extrabold tracking-tight">منظومة فحص ودراسة طلبات تغطية المجاري المائية</h1>
+          <p class="text-xs text-slate-300">طبقاً للقانون 147 لسنة 2021 ولائحته التنفيذية والمنشور الوزاري رقم (4) لسنة 2017</p>
+        </div>
+      </div>
+
+      <!-- أزرار التنقل -->
+      <nav class="flex items-center gap-2 bg-slate-800/70 p-1.5 rounded-xl border border-slate-700">
+        <button id="nav-study" onclick="switchTab('study')" class="px-4 py-2 rounded-lg text-sm font-bold bg-sky-600 text-white transition">
+          📋 دراسة طلب تغطية
+        </button>
+        <button id="nav-admin" onclick="switchTab('admin')" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-300 hover:text-white transition">
+          🔐 إدارة الطلبات (الأدمن)
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- إشعارات النظام -->
+  <div id="toast-container" class="fixed bottom-5 left-5 z-50 flex flex-col gap-2 no-print"></div>
+
+  <!-- المحتوى الرئيسي -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+
+    <!-- ==================== القسم الأول: دراسة الطلب ==================== -->
+    <section id="tab-study" class="space-y-6">
+      
+      <!-- شريط المرجعية القانونية -->
+      <div class="bg-sky-50 border-r-4 border-sky-600 p-4 rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-4 no-print">
+        <div class="text-sm text-sky-950">
+          <span class="font-bold">المرجعية القانونية والفنية:</span>
+          قانون الموارد المائية والري رقم (147) لسنة 2021 • المنشور الوزاري رقم (4) لسنة 2017 • نموذج دراسة التغطية الهندسي.
+        </div>
+        <div class="flex gap-2">
+          <button type="button" onclick="fillSamplePass()" class="text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold px-3 py-1.5 rounded-lg transition">
+            نموذج تجريبي (مستوفي)
+          </button>
+          <button type="button" onclick="fillSampleFail()" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold px-3 py-1.5 rounded-lg transition">
+            نموذج تجريبي (مرفوض)
+          </button>
+          <button type="button" onclick="resetForm()" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-1.5 rounded-lg transition">
+            تفريغ الحقول
+          </button>
+        </div>
+      </div>
+
+      <form id="coverage-form" class="space-y-6">
+        <!-- بطاقة 1: البيانات الأساسية للطلب والمجرى المائي -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 print-card">
+          <h2 class="text-base font-extrabold text-slate-800 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center text-sm">1</span>
+            بيانات مقدم الطلب والمجرى المائي
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">نوع مقدم الطلب *</label>
+              <select id="applicantType" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+                <option value="طلب نائب (مجلس النواب / الشيوخ)">طلب نائب (مجلس النواب / الشيوخ)</option>
+                <option value="طلب مواطنين / أهالي">طلب مواطنين / أهالي</option>
+                <option value="جهة حكومية / وحدة محلية">جهة حكومية / وحدة محلية</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">اسم مقدم الطلب / النائب *</label>
+              <input type="text" id="applicantName" required placeholder="مثال: النائب / فلان الفلاني أو أهالي قرية..." class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">رقم الوارد / تاريخ الطلب *</label>
+              <input type="text" id="requestNumber" required placeholder="مثال: 1425 لسنة 2026" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">نوع المجرى المائي *</label>
+              <select id="waterwayType" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+                <option value="ترعة">ترعة</option>
+                <option value="مصرف">مصرف</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">اسم الترعة / المصرف *</label>
+              <input type="text" id="waterwayName" required placeholder="مثال: ترعة المنصورية / مصرف..." class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">الإدارة العامة للري / الصرف المختصة *</label>
+              <input type="text" id="directorate" required placeholder="مثال: الإدارة العامة لري شرق..." class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">بداية التغطية (من الكيلو) *</label>
+              <input type="number" step="0.001" id="fromKm" required placeholder="مثال: 2.500" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">نهاية التغطية (حتى الكيلو) *</label>
+              <input type="number" step="0.001" id="toKm" required placeholder="مثال: 2.750" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">إجمالي طول التغطية المطلوبة (بالمتر) *</label>
+              <input type="number" id="lengthMeters" required placeholder="يحسب تلقائياً أو أدخل الطول بالمتر" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-bold text-sky-900 focus:ring-2 focus:ring-sky-500 outline-none" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">الجهة الممولة (تدبير الاعتمادات المالية) *</label>
+              <input type="text" id="fundingEntity" required placeholder="مثال: المحافظة / خطة استثمارية / تمويل ذاتي معتمد" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">اسم مهندس الري / الصرف الفاحص *</label>
+              <input type="text" id="engineerName" required placeholder="م / ...................." class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">ملاحظات المعاينة الميدانية</label>
+              <input type="text" id="fieldNotes" placeholder="وصف الطبيعة بالموقع (كتلة سكنية، طريق، مأخذ...)" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none" />
+            </div>
+          </div>
+        </div>
+
+        <!-- بطاقة 2: جدول الضوابط والمعايير (طبقاً للملف المرفق والمنشور رقم 4 لسنة 2017 والقانون 147 لسنة 2021) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 print-card">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
+            <h2 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center text-sm">2</span>
+              الضوابط والمعايير الحاكمة لدراسة التغطية (نموذج المعاينة + المنشور الوزاري 4 لسنة 2017)
+            </h2>
+            <span class="text-xs font-semibold text-slate-500">حدد (ينطبق) أو (لا ينطبق) لكل بند بدقة</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+              <thead>
+                <tr class="bg-slate-100 text-slate-700 border-y border-slate-200">
+                  <th class="py-3 px-3 text-center w-12">م</th>
+                  <th class="py-3 px-4 text-right">الضوابط والمعايير والاشتراطات</th>
+                  <th class="py-3 px-3 text-center w-28">ينطبق (مستوفي)</th>
+                  <th class="py-3 px-3 text-center w-28">لا ينطبق (مخالف)</th>
+                </tr>
+              </thead>
+              <tbody id="criteria-tbody" class="divide-y divide-slate-200">
+                <!-- يتم توليد الصفوف ديناميكياً عبر JS لضمان الدقة -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- أزرار التحليل والحفظ -->
+        <div class="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
+          <button type="submit" class="flex-1 md:flex-none bg-sky-700 hover:bg-sky-800 text-white font-extrabold px-8 py-3.5 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-base">
+            ⚙️ تحليل الطلب وإصدار القرار الفني
+          </button>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button type="button" id="btn-save-firebase" onclick="saveToFirebase()" disabled class="bg-emerald-600 disabled:bg-slate-300 disabled:cursor-not-allowed hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl shadow transition flex items-center gap-2 text-sm">
+              ☁️ حفظ البيانات على Firebase
+            </button>
+            <button type="button" onclick="window.print()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-5 py-3 rounded-xl transition flex items-center gap-2 text-sm">
+              🖨️ طباعة التقرير
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- ==================== بطاقة النتيجة والمخرجات ==================== -->
+      <div id="result-panel" class="hidden space-y-6">
+        <!-- القرار النهائي -->
+        <div id="decision-banner" class="rounded-2xl p-6 border-2 shadow-md print-card">
+          <!-- يملأ ديناميكياً -->
+        </div>
+
+        <!-- الاشتراطات الفنية في حالة الموافقة أو المقترحات والبدائل في حالة الرفض -->
+        <div id="recommendations-panel" class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm print-card">
+          <!-- يملأ ديناميكياً -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== القسم الثاني: لوحة إدارة الأدمن ==================== -->
+    <section id="tab-admin" class="hidden space-y-6">
+      
+      <!-- شاشة تسجيل دخول الأدمن -->
+      <div id="admin-login-box" class="max-w-md mx-auto bg-white rounded-2xl shadow-md border border-slate-200 p-8 mt-8">
+        <div class="text-center mb-6">
+          <div class="w-14 h-14 rounded-2xl bg-sky-100 text-sky-800 flex items-center justify-center text-2xl mx-auto mb-3">🔐</div>
+          <h2 class="text-xl font-extrabold text-slate-800">دخول مدير النظام (Admin)</h2>
+          <p class="text-xs text-slate-500 mt-1">مخصص للبريد الإلكتروني المعتمد لإدارة طلبات التغطية فقط</p>
+        </div>
+
+        <form id="admin-login-form" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">البريد الإلكتروني للأدمن</label>
+            <input type="email" id="admin-email" required placeholder="admin@mwri.gov.eg" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none" dir="ltr" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">كلمة المرور</label>
+            <input type="password" id="admin-password" required placeholder="••••••••" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-sky-500 outline-none" dir="ltr" />
+          </div>
+          <button type="submit" class="w-full bg-sky-800 hover:bg-sky-900 text-white font-bold py-3 rounded-xl shadow transition">
+            تسجيل الدخول إلى لوحة الإدارة
+          </button>
+        </form>
+        <p id="admin-auth-error" class="text-xs text-red-600 font-bold mt-3 text-center hidden"></p>
+      </div>
+
+      <!-- محتوى لوحة التحكم بعد تسجيل الدخول -->
+      <div id="admin-dashboard" class="hidden space-y-6">
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-800">لوحة إدارة ومتابعة طلبات التغطية</h2>
+            <p class="text-xs text-slate-500">مرحباً بك: <span id="logged-admin-email" class="font-bold text-sky-700"></span></p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="loadAdminRequests()" class="bg-sky-100 hover:bg-sky-200 text-sky-800 text-xs font-bold px-4 py-2 rounded-xl transition">
+              🔄 تحديث البيانات
+            </button>
+            <button onclick="exportAllJSON()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2 rounded-xl transition">
+              📥 تصدير JSON
+            </button>
+            <button onclick="adminLogout()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition">
+              تسجيل خروج
+            </button>
+          </div>
+        </div>
+
+        <!-- إحصائيات سريعة -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-bold text-slate-500">إجمالي الطلبات المسجلة</p>
+            <p id="stat-total" class="text-3xl font-extrabold text-slate-800 mt-1">0</p>
+          </div>
+          <div class="bg-emerald-50 p-5 rounded-2xl border border-emerald-200 shadow-sm">
+            <p class="text-xs font-bold text-emerald-700">الطلبات الموافق عليها مبدئياً</p>
+            <p id="stat-approved" class="text-3xl font-extrabold text-emerald-800 mt-1">0</p>
+          </div>
+          <div class="bg-red-50 p-5 rounded-2xl border border-red-200 shadow-sm">
+            <p class="text-xs font-bold text-red-700">الطلبات المرفوضة (مع مقترحات بديلة)</p>
+            <p id="stat-rejected" class="text-3xl font-extrabold text-red-800 mt-1">0</p>
+          </div>
+        </div>
+
+        <!-- جدول الطلبات -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <h3 class="font-bold text-slate-800 text-sm">سجل الطلبات المحفوظة على Firebase</h3>
+            <select id="admin-filter" onchange="renderAdminTable()" class="text-xs border border-slate-300 rounded-lg px-3 py-1.5 outline-none">
+              <option value="ALL">جميع الطلبات</option>
+              <option value="APPROVED">الموافق عليها فقط</option>
+              <option value="REJECTED">المرفوضة فقط</option>
+            </select>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-right">
+              <thead class="bg-slate-50 text-slate-600 text-xs border-b border-slate-200">
+                <tr>
+                  <th class="py-3 px-4">رقم الوارد</th>
+                  <th class="py-3 px-4">مقدم الطلب</th>
+                  <th class="py-3 px-4">المجرى المائي</th>
+                  <th class="py-3 px-4">الموقع والطول</th>
+                  <th class="py-3 px-4">القرار</th>
+                  <th class="py-3 px-4">المهندس الفاحص</th>
+                  <th class="py-3 px-4 text-center">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="admin-requests-tbody" class="divide-y divide-slate-100">
+                <tr>
+                  <td colspan="7" class="py-8 text-center text-slate-400">جاري تحميل البيانات...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- نافذة عرض تفاصيل طلب في لوحة الأدمن -->
+  <div id="details-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 class="font-extrabold text-lg text-slate-800">تفاصيل الدراسة الفنية للطلب</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
+      </div>
+      <div id="modal-content" class="space-y-4 text-sm"></div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs (Modular v10) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // إعدادات Firebase الخاصة بك
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2-X5TdQSad6RnMFt0xgBn6yuLMOa8fes",
+      authDomain: "data111111.firebaseapp.com",
+      projectId: "data111111",
+      storageBucket: "data111111.firebasestorage.app",
+      messagingSenderId: "1090908979261",
+      appId: "1:1090908979261:web:9a1bb9a9dc14bc63412a54",
+      measurementId: "G-YSLEQSG7R3"
+    };
+
+    // ⚠️ بريد الأدمن الوحيد المسموح له بالدخول لصفحة الإدارة (عدّله لبريدك المسجل في Firebase Auth)
+    const SINGLE_ADMIN_EMAIL = "admin@mwri.gov.eg";
+
+    const app = initializeApp(firebaseConfig);
+    try { getAnalytics(app); } catch (e) {}
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // قائمة الضوابط والمعايير الـ 12 المستخلصة من الملف المرفق والمنشور الوزاري 4 لسنة 2017 والقانون 147 لسنة 2021
+    const CRITERIA_LIST = [
+      {
+        id: "c1",
+        text: "وجود كتلة سكنية كثيفة من البرين بعمق لا يقل عن 200 متر وبطول التغطية المطلوبة",
+        source: "بند (1) بالنموذج المرفق والمنشور الوزاري 4 لسنة 2017",
+        failReason: "عدم وجود كتلة سكنية كثيفة مكتملة على البرين بعمق 200 متر، والتغطيات محظورة خارج الكتل السكنية طبقاً لتوجيهات الحد من التغطيات.",
+        alternative: "الاكتفاء بإنشاء كباري مشاة أو سيارات علوية عند نقاط التقاطع الحيوية لربط جانبي المجرى المائي دون تغطيته."
+      },
+      {
+        id: "c2",
+        text: "وجود منشآت خدمية عامة حول الجزء المطلوب تغطيته (مستشفيات – مدارس – مصالح حكومية)",
+        source: "بند (2) بالنموذج المرفق والمنشور الوزاري 4 لسنة 2017",
+        failReason: "عدم وجود منشآت خدمية عامة ذات أولوية قصوى تستدعي التغطية في نطاق الموقع.",
+        alternative: "إنشاء سور حماية خرساني أو معدني آمن على جسور المجرى المائي مع عمل معابر آمنة محددة للمشاة."
+      },
+      {
+        id: "c3",
+        text: "وجود شبكة صرف صحي منفذة وفعالة ومنظومة لجمع المخلفات الصلبة بالمنطقة قبل تنفيذ التغطية",
+        source: "بند (3) بالنموذج المرفق والمنشور الوزاري 4 لسنة 2017 + قانون 147 لسنة 2021",
+        failReason: "عدم اكتمال شبكة الصرف الصحي أو منظومة القمامة، مما يؤدي لتحويل التغطية إلى بؤرة تلوث وانسداد المجرى المائي بالمخالفة لقانون الري 147 لسنة 2021.",
+        alternative: "إرجاء البت في التغطية لحين انتهاء الجهات المختصة من توصيل الصرف الصحي، مع تكثيف حملات التطهير ووضع صناديق قمامة بعيداً عن حرم المجرى."
+      },
+      {
+        id: "c4",
+        text: "وجود ضرورة ملحة لاستغلال الجزء المطلوب تغطيته في توسيع الطرق الرئيسية أو إيجاد محاور مرورية جديدة",
+        source: "بند (4) بالنموذج المرفق والمنشور الوزاري 4 لسنة 2017",
+        failReason: "عدم وجود ضرورة مرورية أو تخطيطية لاستغلال مسار التغطية كمحور مروري رئيسي.",
+        alternative: "تأهيل وتدبيش ميول المجرى المائي وتهذيب الجسور القائمة لتوسعة الطريق الموازي القائم دون المساس بالقطاع المائي."
+      },
+      {
+        id: "c5",
+        text: "عدم وجود شبكة صرف مغطى تصب على المصرف في الجزء المراد تغطيته (خاص بالمصارف)",
+        source: "بند (5) أولاً بالمنشور الوزاري رقم 4 لسنة 2017",
+        failReason: "وجود مجمعات/خطوط صرف مغطى بالجزء المطلوب تغطيته، مما يعيق صيانة وغسيل الشبكة ويسبب طبلية وغرق الأراضي الزراعية.",
+        alternative: "تعديل مسار مصبات الصرف المغطى خارج نطاق التغطية المقترحة أو الاكتفاء بتأهيل جسر المصرف."
+      },
+      {
+        id: "c6",
+        text: "عدم وجود محطات طلمبات بمسافة 5 كم أمام وخلف التغطية المطلوبة",
+        source: "بند (5) بالنموذج المرفق وبند (6) بالمنشور الوزاري 4 لسنة 2017",
+        failReason: "وقوع موقع التغطية داخل نطاق الحرم الهيدروليكي لمحطات الطلمبات (أقل من 5 كم أماماً أو خلفاً) مما يهدد كفاءة تشغيل الطلمبات.",
+        alternative: "ترحيل موقع التغطية أو المعبر المقترح لمسافة تزيد عن 5 كم بعيداً عن محطة الطلمبات بعد موافقة مصلحة الميكانيكا والكهرباء."
+      },
+      {
+        id: "c7",
+        text: "ألا يكون المجرى المائي المطلوب تغطيته مجرى رئيسياً أو مجرى مستقبلاً لمياه السيول",
+        source: "بند (6) بالنموذج المرفق وبند (7) بالمنشور الوزاري 4 لسنة 2017 + قانون 147 لسنة 2021",
+        failReason: "المجرى رئيسي أو مخر/مستقبل لمياه السيول، ويحظر القانون 147 لسنة 2021 تغطيته لتجنب مخاطر الفيضان والسيول.",
+        alternative: "الالتزام التام بإبقاء المجرى مكشوفاً لاستيعاب التصرفات القصوى والسيول، واستخدام كباري ذات بحور واسعة لا تعيق السريان."
+      },
+      {
+        id: "c8",
+        text: "ألا تكون مسافة التغطية المقترحة متضمنة سحارة أو عملاً صناعياً",
+        source: "بند (7) بالنموذج المرفق وبند (8) بالمنشور الوزاري 4 لسنة 2017",
+        failReason: "تتضمن المسافة المقترحة سحارة أو منشأ مائياً، مما يعيق أعمال الصيانة والطوارئ والتسليك.",
+        alternative: "استبعاد مسافة السحارة وحرمها الآمن تماماً من نطاق التغطية المقترحة وتقسيم التغطية (إن أمكن) قبل وبعد السحارة بمسافة كافية."
+      },
+      {
+        id: "c9",
+        text: "التغطية المطلوبة لا تؤثر على كفاءة المجرى المائي (التصرفات والمناسيب التصميمية الحالية والمستقبلية)",
+        source: "بند (8) بالنموذج المرفق وبند (9) بالمنشور الوزاري 4 لسنة 2017 + قانون 147 لسنة 2021",
+        failReason: "أثبتت الدراسة الهيدروليكية أن التغطية ستؤثر سلباً على التصرفات والمناسيب التصميمية وتسبب اختناقاً مائياً.",
+        alternative: "تأهيل وتبطين المجرى المائي لزيادة كفاءته الهيدروليكية بدلاً من تغطيته، أو الاكتفاء بمعبر علوي."
+      },
+      {
+        id: "c10",
+        text: "عدم وجود مشاريع مستقبلية لأغراض توسيع أو تعميق المجرى المائي المطلوب تغطيته",
+        source: "بند (9) بالنموذج المرفق وبند (10) بالمنشور الوزاري 4 لسنة 2017",
+        failReason: "وجود خطة مستقبلية لتوسيع أو تعميق المجرى المائي، وتنفيذ التغطية سيهدر المال العام ويعيق التطوير المستقبلي.",
+        alternative: "تأجيل أي أعمال لحين الانتهاء من مشروع التوسيع والتعميق المدرج بخطة الوزارة."
+      },
+      {
+        id: "c11",
+        text: "وجود صعوبة في تطهير المجرى المائي وعدم إمكانية عمل الصيانة اللازمة له بالوضع المكشوف",
+        source: "بند (10) بالنموذج المرفق وبند (11) بالمنشور الوزاري 4 لسنة 2017",
+        failReason: "إمكانية تطهير وصيانة المجرى المائي متاحة حالياً بالمعدات، ولا توجد ضرورة هندسية للتغطية.",
+        alternative: "إزالة الإشغالات والتعديات على جسور المجرى المائي طبقاً للقانون 147 لسنة 2021 لتمكين معدات التطهير من العمل بسهولة."
+      },
+      {
+        id: "c12",
+        text: "تدبير الاعتمادات والموارد المالية المطلوبة لتنفيذ التغطية بمعرفة الجهة الطالبة",
+        source: "بند (11) بالنموذج المرفق وبند (12) بالمنشور الوزاري 4 لسنة 2017",
+        failReason: "عدم توافر الاعتماد المالي لدى الجهة الطالبة، حيث لا تتحمل وزارة الموارد المائية والري تكاليف إنشاء التغطيات.",
+        alternative: "مخاطبة المحافظة أو الجهة الطالبة لإدراج المشروع في خطتها الاستثمارية وتوفير التمويل اللازم قبل إعادة العرض."
+      }
+    ];
+
+    let currentAnalysisResult = null;
+    let cachedAdminRequests = [];
+
+    // بناء جدول الضوابط عند تحميل الصفحة
+    function renderCriteriaTable() {
+      const tbody = document.getElementById("criteria-tbody");
+      tbody.innerHTML = CRITERIA_LIST.map((item, idx) => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-3 px-3 text-center font-bold text-slate-500">${idx + 1}</td>
+          <td class="py-3 px-4">
+            <p class="font-bold text-slate-800">${item.text}</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">${item.source}</p>
+          </td>
+          <td class="py-3 px-3 text-center">
+            <label class="inline-flex items-center justify-center cursor-pointer p-2 rounded-lg hover:bg-emerald-50">
+              <input type="radio" name="${item.id}" value="yes" required class="w-4 h-4 text-emerald-600 focus:ring-emerald-500" />
+            </label>
+          </td>
+          <td class="py-3 px-3 text-center">
+            <label class="inline-flex items-center justify-center cursor-pointer p-2 rounded-lg hover:bg-red-50">
+              <input type="radio" name="${item.id}" value="no" required class="w-4 h-4 text-red-600 focus:ring-red-500" />
+            </label>
+          </td>
+        </tr>
+      `).join("");
+    }
+    renderCriteriaTable();
+
+    // حساب طول التغطية تلقائياً من الكيلومترات
+    const fromKmInput = document.getElementById("fromKm");
+    const toKmInput = document.getElementById("toKm");
+    const lengthInput = document.getElementById("lengthMeters");
+
+    function updateLength() {
+      const f = parseFloat(fromKmInput.value);
+      const t = parseFloat(toKmInput.value);
+      if (!isNaN(f) && !isNaN(t) && t >= f) {
+        lengthInput.value = Math.round((t - f) * 1000);
+      }
+    }
+    fromKmInput.addEventListener("input", updateLength);
+    toKmInput.addEventListener("input", updateLength);
+
+    // التنقل بين التبويبات
+    window.switchTab = function(tab) {
+      document.getElementById("tab-study").classList.toggle("hidden", tab !== "study");
+      document.getElementById("tab-admin").classList.toggle("hidden", tab !== "admin");
+
+      const btnStudy = document.getElementById("nav-study");
+      const btnAdmin = document.getElementById("nav-admin");
+      if (tab === "study") {
+        btnStudy.className = "px-4 py-2 rounded-lg text-sm font-bold bg-sky-600 text-white transition";
+        btnAdmin.className = "px-4 py-2 rounded-lg text-sm font-bold text-slate-300 hover:text-white transition";
+      } else {
+        btnAdmin.className = "px-4 py-2 rounded-lg text-sm font-bold bg-sky-600 text-white transition";
+        btnStudy.className = "px-4 py-2 rounded-lg text-sm font-bold text-slate-300 hover:text-white transition";
+      }
+    };
+
+    // تحليل الطلب وإصدار القرار
+    document.getElementById("coverage-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const evaluatedCriteria = [];
+      const failedItems = [];
+
+      CRITERIA_LIST.forEach((c, idx) => {
+        const selected = document.querySelector(`input[name="${c.id}"]:checked`)?.value;
+        const passed = selected === "yes";
+        evaluatedCriteria.push({
+          index: idx + 1,
+          id: c.id,
+          text: c.text,
+          passed
+        });
+        if (!passed) {
+          failedItems.push({ index: idx + 1, ...c });
+        }
+      });
+
+      const isApproved = failedItems.length === 0;
+
+      currentAnalysisResult = {
+        applicantType: document.getElementById("applicantType").value,
+        applicantName: document.getElementById("applicantName").value.trim(),
+        requestNumber: document.getElementById("requestNumber").value.trim(),
+        waterwayType: document.getElementById("waterwayType").value,
+        waterwayName: document.getElementById("waterwayName").value.trim(),
+        directorate: document.getElementById("directorate").value.trim(),
+        fromKm: parseFloat(fromKmInput.value),
+        toKm: parseFloat(toKmInput.value),
+        lengthMeters: parseFloat(lengthInput.value),
+        fundingEntity: document.getElementById("fundingEntity").value.trim(),
+        engineerName: document.getElementById("engineerName").value.trim(),
+        fieldNotes: document.getElementById("fieldNotes").value.trim(),
+        status: isApproved ? "APPROVED" : "REJECTED",
+        statusText: isApproved ? "موافقة مبدئية مشروطة" : "مرفوض لعدم استيفاء الضوابط",
+        criteria: evaluatedCriteria,
+        failedReasons: failedItems.map(f => f.failReason),
+        alternatives: failedItems.map(f => f.alternative),
+        createdAtISO: new Date().toISOString()
+      };
+
+      renderAnalysisResult(currentAnalysisResult, failedItems);
+      document.getElementById("btn-save-firebase").disabled = false;
+      showToast("تم تحليل الطلب وإصدار التقرير الفني بنجاح", "info");
+    });
+
+    function renderAnalysisResult(data, failedItems) {
+      const panel = document.getElementById("result-panel");
+      const banner = document.getElementById("decision-banner");
+      const recPanel = document.getElementById("recommendations-panel");
+
+      panel.classList.remove("hidden");
+
+      if (data.status === "APPROVED") {
+        banner.className = "rounded-2xl p-6 border-2 border-emerald-500 bg-emerald-50 text-emerald-950 shadow-md print-card";
+        banner.innerHTML = `
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-2xl shrink-0">✅</div>
+            <div>
+              <span class="inline-block bg-emerald-200 text-emerald-900 text-xs font-extrabold px-3 py-1 rounded-full mb-1">نتيجة الفحص القانوني والهندسي</span>
+              <h3 class="text-xl font-extrabold text-emerald-900">القرار: الموافقة المبدئية على طلب التغطية</h3>
+              <p class="text-sm mt-1 text-emerald-800">
+                الطلب المقدم من <strong>${data.applicantName}</strong> لتغطية <strong>${data.waterwayType} ${data.waterwayName}</strong> من ك (${data.fromKm}) حتى ك (${data.toKm}) بطول (${data.lengthMeters} متر) مستوفٍ لكافة الضوابط والمعايير الواردة بقانون الموارد المائية والري رقم 147 لسنة 2021 والمنشور الوزاري رقم (4) لسنة 2017.
+              </p>
+            </div>
+          </div>
+        `;
+
+        recPanel.innerHTML = `
+          <h4 class="font-extrabold text-base text-slate-800 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+            📐 الاشتراطات الفنية الملزمة عند إقرار التنفيذ (ثانياً بالمنشور الوزاري 4 لسنة 2017 وقانون 147 لسنة 2021):
+          </h4>
+          <ul class="space-y-2.5 text-sm text-slate-700 list-disc pr-5">
+            <li><strong>التصميم الهيدروليكي:</strong> تصميم قطاع التغطية بحيث يكون السريان المار داخلها <strong>سرياناً حراً (Free Flow)</strong> دون أي اختناق أو تأثير على المناسيب التصميمية.</li>
+            <li><strong>نوع المنشأ:</strong> يتم تنفيذ التغطية بنظام <strong>القطاعات الصندوقية (Box Section)</strong> ولا يُلجأ للمواسير إلا في أضيق الحدود بعد موافقة السلطة المختصة.</li>
+            <li><strong>غرف التفتيش والصيانة:</strong> إنشاء غرف تفتيش مطابقة للمواصفات بمسافات بينية مناسبة على أن يكون سقف غرف التفتيش عبارة عن <strong>أغطية شرائح</strong> لتسهيل أعمال التطهير الدورية.</li>
+            <li><strong>التمويل والإشراف:</strong> التنفيذ على نفقة <strong>(${data.fundingEntity})</strong> وتحت الإشراف الهندسي الكامل للإدارة العامة المختصة بوزارة الموارد المائية والري، والحصول على الترخيص الرسمي طبقاً للمادة (38) من القانون 147 لسنة 2021 قبل البدء في الأعمال.</li>
+          </ul>
+        `;
+      } else {
+        banner.className = "rounded-2xl p-6 border-2 border-red-500 bg-red-50 text-red-950 shadow-md print-card";
+        banner.innerHTML = `
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center text-2xl shrink-0">⛔</div>
+            <div>
+              <span class="inline-block bg-red-200 text-red-900 text-xs font-extrabold px-3 py-1 rounded-full mb-1">نتيجة الفحص القانوني والهندسي</span>
+              <h3 class="text-xl font-extrabold text-red-900">القرار: رفض طلب التغطية</h3>
+              <p class="text-sm mt-1 text-red-800">
+                تعذر الموافقة على طلب <strong>${data.applicantName}</strong> لتغطية <strong>${data.waterwayType} ${data.waterwayName}</strong> بطول (${data.lengthMeters} متر) لعدم استيفاء <strong>(${failedItems.length})</strong> من الضوابط والمعايير الحاكمة بقانون 147 لسنة 2021 والمنشور الوزاري رقم (4) لسنة 2017.
+              </p>
+            </div>
+          </div>
+        `;
+
+        const reasonsHTML = failedItems.map(item => `
+          <li class="p-3 rounded-xl bg-red-50/70 border border-red-100">
+            <span class="font-bold text-red-900">البند (${item.index}): ${item.text}</span>
+            <p class="text-xs text-red-700 mt-1">السبب: ${item.failReason}</p>
+          </li>
+        `).join("");
+
+        const uniqueAlternatives = [...new Set(failedItems.map(i => i.alternative))];
+        const alternativesHTML = uniqueAlternatives.map((alt, i) => `
+          <li class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+            <span class="w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">${i + 1}</span>
+            <span class="text-sm text-amber-950 font-semibold">${alt}</span>
+          </li>
+        `).join("");
+
+        recPanel.innerHTML = `
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <h4 class="font-extrabold text-base text-red-900 border-b border-slate-100 pb-3 mb-3 flex items-center gap-2">
+                ❌ أسباب الرفض القانونية والهندسية:
+              </h4>
+              <ul class="space-y-2.5">${reasonsHTML}</ul>
+            </div>
+
+            <div>
+              <h4 class="font-extrabold text-base text-amber-900 border-b border-slate-100 pb-3 mb-3 flex items-center gap-2">
+                💡 الأفكار والمقترحات البديلة (عملاً بالمنشور الوزاري 4 لسنة 2017):
+              </h4>
+              <p class="text-xs text-slate-500 mb-3">
+                ينص المنشور الوزاري على اقتراح بدائل تؤدي نفس الغرض دون الحاجة لتغطية المجرى المائي:
+              </p>
+              <ul class="space-y-2.5">${alternativesHTML}</ul>
+            </div>
+          </div>
+        `;
+      }
+
+      panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // حفظ البيانات على Firebase Firestore
+    window.saveToFirebase = async function() {
+      if (!currentAnalysisResult) {
+        showToast("يرجى تحليل الطلب أولاً قبل الحفظ", "error");
+        return;
+      }
+
+      const btn = document.getElementById("btn-save-firebase");
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = "⏳ جاري الحفظ على Firebase...";
+
+      try {
+        const docRef = await addDoc(collection(db, "coverage_requests"), {
+          ...currentAnalysisResult,
+          createdAt: serverTimestamp()
+        });
+        showToast(`تم حفظ الطلب بنجاح على قاعدة البيانات (كود: ${docRef.id.slice(0, 6)})`, "success");
+      } catch (error) {
+        console.error("Firebase Save Error:", error);
+        showToast("تعذر الحفظ على السحابة (تأكد من قواعد Firestore Rules): " + error.message, "error");
+        btn.disabled = false;
+      } finally {
+        btn.innerHTML = originalText;
+      }
+    };
+
+    // ==================== مصادقة وإدارة الأدمن ====================
+    onAuthStateChanged(auth, (user) => {
+      const loginBox = document.getElementById("admin-login-box");
+      const dashboard = document.getElementById("admin-dashboard");
+      const errEl = document.getElementById("admin-auth-error");
+
+      if (user) {
+        // التحقق من أن المستخدم هو الأدمن الوحيد المسموح له
+        if (user.email.toLowerCase() === SINGLE_ADMIN_EMAIL.toLowerCase()) {
+          loginBox.classList.add("hidden");
+          dashboard.classList.remove("hidden");
+          document.getElementById("logged-admin-email").textContent = user.email;
+          loadAdminRequests();
+        } else {
+          signOut(auth);
+          errEl.textContent = "عذراً، هذا الحساب غير مصرح له بالدخول كمدير للنظام.";
+          errEl.classList.remove("hidden");
+        }
+      } else {
+        loginBox.classList.remove("hidden");
+        dashboard.classList.add("hidden");
+      }
+    });
+
+    document.getElementById("admin-login-form").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const email = document.getElementById("admin-email").value.trim();
+      const password = document.getElementById("admin-password").value;
+      const errEl = document.getElementById("admin-auth-error");
+      errEl.classList.add("hidden");
+
+      if (email.toLowerCase() !== SINGLE_ADMIN_EMAIL.toLowerCase()) {
+        errEl.textContent = "غير مصرح: هذه الصفحة مخصصة لبريد الأدمن المعتمد فقط.";
+        errEl.classList.remove("hidden");
+        return;
+      }
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        showToast("تم تسجيل دخول الأدمن بنجاح", "success");
+      } catch (err) {
+        errEl.textContent = "خطأ في البريد الإلكتروني أو كلمة المرور (" + err.code + ")";
+        errEl.classList.remove("hidden");
+      }
+    });
+
+    window.adminLogout = async function() {
+      await signOut(auth);
+      showToast("تم تسجيل الخروج", "info");
+    };
+
+    window.loadAdminRequests = async function() {
+      const tbody = document.getElementById("admin-requests-tbody");
+      tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">⏳ جاري جلب البيانات من Firebase...</td></tr>`;
+
+      try {
+        const q = query(collection(db, "coverage_requests"), orderBy("createdAtISO", "desc"));
+        const snapshot = await getDocs(q);
+        cachedAdminRequests = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        document.getElementById("stat-total").textContent = cachedAdminRequests.length;
+        document.getElementById("stat-approved").textContent = cachedAdminRequests.filter(r => r.status === "APPROVED").length;
+        document.getElementById("stat-rejected").textContent = cachedAdminRequests.filter(r => r.status === "REJECTED").length;
+
+        renderAdminTable();
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-red-500">خطأ في جلب البيانات: ${err.message}</td></tr>`;
+      }
+    };
+
+    window.renderAdminTable = function() {
+      const filter = document.getElementById("admin-filter").value;
+      const tbody = document.getElementById("admin-requests-tbody");
+
+      const filtered = cachedAdminRequests.filter(r => filter === "ALL" || r.status === filter);
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">لا توجد طلبات مسجلة مطابقة للتصفية</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(req => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-3 px-4 font-bold text-slate-700">${req.requestNumber || "-"}</td>
+          <td class="py-3 px-4">
+            <div class="font-bold text-slate-800">${req.applicantName}</div>
+            <div class="text-xs text-slate-400">${req.applicantType}</div>
+          </td>
+          <td class="py-3 px-4 font-semibold">${req.waterwayType} ${req.waterwayName}</td>
+          <td class="py-3 px-4 text-xs">
+            من ك ${req.fromKm} إلى ك ${req.toKm}
+            <span class="block font-bold text-sky-700">(${req.lengthMeters} متر)</span>
+          </td>
+          <td class="py-3 px-4">
+            ${req.status === "APPROVED"
+              ? `<span class="px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800">✅ موافقة</span>`
+              : `<span class="px-2.5 py-1 rounded-full text-xs font-extrabold bg-red-100 text-red-800">⛔ مرفوض</span>`
+            }
+          </td>
+          <td class="py-3 px-4 text-xs text-slate-600">${req.engineerName || "-"}</td>
+          <td class="py-3 px-4 text-center space-x-1 space-x-reverse">
+            <button onclick="viewRequestDetails('${req.id}')" class="bg-sky-100 hover:bg-sky-200 text-sky-800 text-xs font-bold px-3 py-1.5 rounded-lg">
+              عرض
+            </button>
+            <button onclick="deleteRequest('${req.id}')" class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold px-3 py-1.5 rounded-lg">
+              حذف
+            </button>
+          </td>
+        </tr>
+      `).join("");
+    };
+
+    window.viewRequestDetails = function(id) {
+      const req = cachedAdminRequests.find(r => r.id === id);
+      if (!req) return;
+
+      const modal = document.getElementById("details-modal");
+      const content = document.getElementById("modal-content");
+
+      content.innerHTML = `
+        <div class="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <div><span class="text-slate-400">رقم الوارد:</span> <strong>${req.requestNumber}</strong></div>
+          <div><span class="text-slate-400">مقدم الطلب:</span> <strong>${req.applicantName}</strong></div>
+          <div><span class="text-slate-400">المجرى المائي:</span> <strong>${req.waterwayType} ${req.waterwayName}</strong></div>
+          <div><span class="text-slate-400">الموقع:</span> <strong>ك ${req.fromKm} - ك ${req.toKm} (${req.lengthMeters} م)</strong></div>
+          <div><span class="text-slate-400">جهة التمويل:</span> <strong>${req.fundingEntity}</strong></div>
+          <div><span class="text-slate-400">المهندس الفاحص:</span> <strong>${req.engineerName}</strong></div>
+        </div>
+
+        <div class="p-4 rounded-xl ${req.status === 'APPROVED' ? 'bg-emerald-50 border border-emerald-200 text-emerald-900' : 'bg-red-50 border border-red-200 text-red-900'}">
+          <strong>القرار الصادر:</strong> ${req.statusText}
+        </div>
+
+        ${req.status === "REJECTED" ? `
+          <div>
+            <h4 class="font-bold text-red-800 mb-1">أسباب الرفض:</h4>
+            <ul class="list-disc pr-5 text-xs space-y-1 text-red-700">
+              ${(req.failedReasons || []).map(r => `<li>${r}</li>`).join("")}
+            </ul>
+          </div>
+          <div>
+            <h4 class="font-bold text-amber-800 mb-1">المقترحات البديلة المطروحة:</h4>
+            <ul class="list-disc pr-5 text-xs space-y-1 text-amber-900">
+              ${[...new Set(req.alternatives || [])].map(a => `<li>${a}</li>`).join("")}
+            </ul>
+          </div>
+        ` : ""}
+      `;
+
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    };
+
+    window.closeModal = function() {
+      const modal = document.getElementById("details-modal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    };
+
+    window.deleteRequest = async function(id) {
+      if (!confirm("هل أنت متأكد من حذف هذا الطلب نهائياً من قاعدة البيانات؟")) return;
+      try {
+        await deleteDoc(doc(db, "coverage_requests", id));
+        showToast("تم حذف الطلب بنجاح", "info");
+        loadAdminRequests();
+      } catch (err) {
+        showToast("تعذر الحذف: " + err.message, "error");
+      }
+    };
+
+    window.exportAllJSON = function() {
+      const blob = new Blob([JSON.stringify(cachedAdminRequests, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `coverage-requests-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+    };
+
+    // ==================== أدوات مساعدة للتجربة السريعة ====================
+    window.fillSamplePass = function() {
+      document.getElementById("applicantType").value = "طلب نائب (مجلس النواب / الشيوخ)";
+      document.getElementById("applicantName").value = "النائب / أحمد محمود (عن أهالي مركز طلخا)";
+      document.getElementById("requestNumber").value = "412 / 2026";
+      document.getElementById("waterwayType").value = "ترعة";
+      document.getElementById("waterwayName").value = "ترعة الساحل الفرعية";
+      document.getElementById("directorate").value = "الإدارة العامة لري غرب الدقهلية";
+      document.getElementById("fromKm").value = "3.200";
+      document.getElementById("toKm").value = "3.450";
+      document.getElementById("lengthMeters").value = "250";
+      document.getElementById("fundingEntity").value = "خطة المحافظة الاستثمارية (تم توفير الاعتماد)";
+      document.getElementById("engineerName").value = "م / كريم عبد الرحمن";
+      document.getElementById("fieldNotes").value = "الموقع وسط كتلة سكنية مكتملة وبجوار مدرسة ومستشفى مركزي";
+      CRITERIA_LIST.forEach(c => {
+        document.querySelector(`input[name="${c.id}"][value="yes"]`).checked = true;
+      });
+    };
+
+    window.fillSampleFail = function() {
+      document.getElementById("applicantType").value = "طلب مواطنين / أهالي";
+      document.getElementById("applicantName").value = "أهالي عزبة النهضة";
+      document.getElementById("requestNumber").value = "589 / 2026";
+      document.getElementById("waterwayType").value = "مصرف";
+      document.getElementById("waterwayName").value = "مصرف المحيط الرئيسي";
+      document.getElementById("directorate").value = "الإدارة العامة لصرف الجيزة";
+      document.getElementById("fromKm").value = "12.000";
+      document.getElementById("toKm").value = "12.600";
+      document.getElementById("lengthMeters").value = "600";
+      document.getElementById("fundingEntity").value = "غير متوفر (يطلبون التنفيذ على نفقة الوزارة)";
+      document.getElementById("engineerName").value = "م / طارق حسن";
+      document.getElementById("fieldNotes").value = "المصرف رئيسي ويستقبل سيول ويقع خلف محطة طلمبات بمسافة 2 كم";
+      CRITERIA_LIST.forEach(c => {
+        const val = ["c3", "c6", "c7", "c12"].includes(c.id) ? "no" : "yes";
+        document.querySelector(`input[name="${c.id}"][value="${val}"]`).checked = true;
+      });
+    };
+
+    window.resetForm = function() {
+      document.getElementById("coverage-form").reset();
+      document.getElementById("result-panel").classList.add("hidden");
+      document.getElementById("btn-save-firebase").disabled = true;
+      currentAnalysisResult = null;
+    };
+
+    function showToast(msg, type = "info") {
+      const container = document.getElementById("toast-container");
+      const colors = {
+        success: "bg-emerald-700 text-white",
+        error: "bg-red-700 text-white",
+        info: "bg-slate-800 text-white"
+      };
+      const el = document.createElement("div");
+      el.className = `${colors[type]} px-4 py-3 rounded-xl shadow-lg text-xs font-bold transition transform`;
+      el.textContent = msg;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 4500);
+    }
+  </script>
+</body>
+</html>
